@@ -15,6 +15,11 @@ void recalculateParameters()
     A = 0.1 / omega * PI;
 }
 
+float graphXMin;
+float graphXMax;
+float graphXMid;
+float graphWidth;
+
 // Pseudo-enum
 final class Direction
 {
@@ -95,9 +100,10 @@ class Tube
         drawNodes();
         drawParticles();
         drawBody();
+        drawGraph();
     }
 
-    public void drawBody()
+    private void drawBody()
     {
         // Reset drawing parameters
         fill(255, 255, 255);
@@ -132,7 +138,38 @@ class Tube
         }
     }
 
-    public void drawNodes()
+    private void drawParticles()
+    {
+        noStroke();
+        strokeWeight(1);
+        float mouseTubeX = (mouseX - this.xmin) / this.width;
+        double mouseInTube = (this.ymin <= mouseY && mouseY <= this.ymax && 0 <= mouseTubeX && mouseTubeX <= 1);
+
+        fill(0, 0, 0, 255 * 0.25);
+        for (Particle particle : particles)
+        {
+            float r = 4;
+            float x0 = this.xmin + this.width * particle.x;
+            float dx = this.width * this.calculateDisplacement(particle.x);
+            float x = min(this.xmax - r, max(this.xmin + r, x0 + dx));
+            float y = min(this.ymax + r, max(this.ymin + r, this.ymin + this.height * particle.y));
+            if (mouseInTube)
+            {
+                fill(0, 0, 0, 255 * 0.1);
+                if (abs(mouseTubeX - particle.x) <= 0.05)
+                {
+                    stroke(255, 0, 0);
+                    noFill();
+                    line(x0, y, x, y);
+                    fill(0, 0, 0, 255 * 0.5);
+                    noStroke();
+                }
+            }
+            ellipse(x, y, r, r);
+        }
+    }
+
+    private void drawNodes()
     {
         if (this.direction != Direction.STANDING)
         {
@@ -172,36 +209,50 @@ class Tube
         }
     }
 
-    public void drawParticles()
+    private void drawGraph()
     {
-        noStroke();
+        stroke(0, 0, 0, 255 * 0.5);
         strokeWeight(1);
-        float mouseTubeX = (mouseX - this.xmin) / this.width;
-        double mouseInTube = (this.ymin <= mouseY && mouseY <= this.ymax && 0 <= mouseTubeX && mouseTubeX <= 1);
-        
-        fill(0, 0, 0, 255 * 0.25);
-        for (Particle particle : particles)
+        fill(0, 0, 0, 255 * 0.5);
+
+        line(graphXMin, this.ymin, graphXMin, this.ymax);
+        line(graphXMin, this.ymid, graphXMax, this.ymid);
+        line(graphXMin, this.ymin, graphXMin - 2, this.ymin);
+        text("2A", graphXMin - textWidth("2A") - 4, this.ymin + textAscent("2A") / 2);
+
+        float ay = this.ymin + this.height / 4;
+        line(graphXMin, ay, graphXMin - 2, ay);
+        text("A", graphXMin - textWidth("A") - 4, ay + textAscent("A") / 2);
+
+        text("Displacement", graphXMin + 4, this.ymin);
+        text("Position", graphXMax - textWidth("Position"), this.ymid - 4);
+        noFill();
+
+        stroke(0, 0, 0);
+        strokeWeight(1.5);
+        noFill();
+        beginShape();
+        int samples = floor(graphWidth / 4);
+        for (int i = 0; i <= samples; i++)
         {
-            float r = 4;
-            float x0 = this.xmin + this.width * particle.x;
-            float dx = this.width * this.calculateDisplacement(particle.x);
-            float x = min(this.xmax - r, max(this.xmin + r, x0 + dx));
-            float y = min(this.ymax + r, max(this.ymin + r, this.ymin + this.height * particle.y));
-            if (mouseInTube)
+            float x = i / samples;
+            float y = this.calculateDisplacement(x);
+            float xpos = graphXMin + graphWidth * x;
+            float ypos = this.ymid + y / A * this.height / 4;
+
+            if (i == 0)
             {
-                fill(0, 0, 0, 255 * 0.1);
-                if (abs(mouseTubeX - particle.x) <= 0.05)
-                {
-                    stroke(255, 0, 0);
-                    noFill();
-                    line(x0, y, x, y);
-                    fill(0, 0, 0, 255 * 0.5);
-                    noStroke();
-                }
+                vertex(xpos, ypos);
             }
-            ellipse(x, y, r, r);
+            curveVertex(xpos, ypos);
+            if (i == samples)
+            {
+                vertex(xpos, ypos);
+            }
         }
+        endShape();
     }
+
 }
 
 Tube first, second, standing;
@@ -212,12 +263,18 @@ void setup()
     size(600, 400);
 
     float tubeWidth = width * 0.75;
-    float xmin = width * 0.1;
-    float xmax = width * 0.6;
-    first = new Tube(xmin, xmax, height * 0.1, height * 0.3, Direction.RIGHT);
-    second = new Tube(xmin, xmax, height * 0.4, height * 0.6, Direction.LEFT);
-    standing = new Tube(xmin, xmax, height * 0.7, height * 0.9, Direction.STANDING);
+    float xmin = width * 0.05;
+    float xmax = width * 0.55;
+    first = new Tube(xmin, xmax, height * 0.05, height * 0.25, Direction.RIGHT);
+    second = new Tube(xmin, xmax, height * 0.30, height * 0.50, Direction.LEFT);
+    standing = new Tube(xmin, xmax, height * 0.55, height * 0.75, Direction.STANDING);
     tubes = { first, second, standing };
+
+    graphXMin = width * 0.60;
+    graphXMax = width * 0.95;
+    graphXMid = (graphXMin + graphXMax) / 2;
+    graphWidth = graphXMax - graphXMin;
+
     frameRate(1 / dt);
 }
 
