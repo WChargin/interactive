@@ -26,3 +26,7 @@ Controls and interactivity:
   * **Observe** how the displacement graphs at right relate to the particle motion at left.
 
 {% include pjs_canvas.html %}
+
+Note that it may appear that particles at a node still oscillate.
+In fact, particles *exactly* on top of a node will *not* oscillate, but particles very *near* a node still will.
+Compare the behavior of particles near nodes with that of those near antinodes and the difference should become clearer.

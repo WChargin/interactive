@@ -219,7 +219,7 @@ class Tube
             return;
         }
 
-        float weight = 4;
+        float weight = 8;
         float offset = weight / 2 + 1;
         strokeWeight(weight);
         noFill();
@@ -233,7 +233,7 @@ class Tube
         {
             float x = this.xmin + (i / mm) * this.width;
             float strength = exp(-Math.pow((x - mouseX) * lambda, 2) * 1);
-            stroke(leftOpen ? 255 : 0, 0, leftOpen ? 0 : 255, 255 * strength);
+            stroke(leftOpen ? 255 : 0, 0, leftOpen ? 0 : 255, 100 * strength);
             line(x, this.ymin + offset, x, this.ymax - offset);
         }
 
@@ -242,7 +242,7 @@ class Tube
         {
             float x = this.xmin + ((i - 0.5) / mm) * this.width;
             float strength = exp(-Math.pow((x - mouseX) * lambda, 2) * 1);
-            stroke(leftOpen ? 0 : 255, 0, leftOpen ? 255 : 0, 255 * strength);
+            stroke(leftOpen ? 0 : 255, 0, leftOpen ? 255 : 0, 127 * strength);
             line(x, this.ymin + offset, x, this.ymax - offset);
         }
     }
