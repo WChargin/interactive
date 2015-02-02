@@ -13,6 +13,8 @@ boolean rightOpen = true;
 void recalculateParameters()
 {
     A = 0.1 / omega * PI;
+    k = PI * m;
+    omega = 0.5 * PI * m;
 }
 
 float graphXMin;
@@ -295,8 +297,117 @@ class Tube
 
 }
 
+class Slider
+{
+    private float value;
+    private float min;
+    private float max;
+    private float step;
+    private boolean pressed;
+
+    private float xmin;
+    private float xmax;
+    private float y;
+
+    private float width = 8;
+    private float height = 16;
+
+
+    public Slider(float min, float value, float max, float step, float xmin, float xmax, float y)
+    {
+        this.min = min;
+        this.value = value;
+        this.max = max;
+        this.step = step;
+
+        this.xmin = xmin;
+        this.xmax = xmax;
+        this.y = y;
+
+        this.pressed = false;
+    }
+
+    private float valueToPosition(float z)
+    {
+        return map(z, this.min, this.max, this.xmin, this.xmax);
+    }
+    private float positionToValue(float x)
+    {
+        float z = map(x, this.xmin, this.xmax, 0, this.max - this.min);
+        z = round(z / this.step) * this.step;
+        z += this.min;
+        z = Math.min(this.max, Math.max(this.min, z));
+        return z;
+    }
+
+    public void interact()
+    {
+        // Snap in case parameters changed
+        this.value = this.positionToValue(this.valueToPosition(this.value));
+
+        // Consider the mouse event
+        if (!this.pressed && mousePressed)
+        {
+            float dy = abs(mouseY - this.y);
+            if (this.xmin <= mouseX && mouseX <= this.xmax && dy <= this.height)
+            {
+                this.pressed = true;
+            }
+        }
+        if (this.pressed)
+        {
+            float xnew = mouseX;
+            this.value = this.positionToValue(xnew);
+        }
+        if (!mousePressed)
+        {
+            this.pressed = false;
+        }
+    }
+
+    public void drawSelf()
+    {
+        // First, draw line and ticks
+        stroke(0, 0, 0, 127);
+        strokeWeight(1);
+        noFill();
+        line(this.xmin, this.y, this.xmax, this.y);
+        for (float z = this.min; z <= this.max; z += this.step)
+        {
+            float x = this.valueToPosition(z);
+            line(x, this.y - 2, x, this.y + 2);
+        }
+
+        // Draw the thumb
+        stroke(0, 0, 0);
+        if (this.pressed)
+        {
+            fill(200, 200, 255);
+        }
+        else
+        {
+            fill(230, 230, 230);
+        }
+        strokeWeight(1.25);
+        strokeJoin(ROUND);
+        float cx = this.valueToPosition(this.value);
+        float cy = this.y;
+        beginShape();
+        vertex(cx - this.width / 2, cy - this.height / 2);
+        vertex(cx + this.width / 2, cy - this.height / 2);
+        vertex(cx + this.width / 2, cy + this.height / 4);
+        vertex(cx, cy + this.height / 2);
+        vertex(cx - this.width / 2, cy + this.height / 4);
+        endShape(CLOSE);
+    }
+
+}
+
 Tube first, second, standing;
 Tube tubes[];
+
+Slider sld_m;
+Slider sliders[];
 
 void setup()
 {
@@ -314,6 +425,10 @@ void setup()
     graphXMax = width * 0.95;
     graphXMid = (graphXMin + graphXMax) / 2;
     graphWidth = graphXMax - graphXMin;
+
+    sld_m = new Slider(1, 3, 7, 1, width * 0.05, width * 0.45, height * 0.9);
+
+    sliders = { sld_m };
 
     frameRate(1 / dt);
 }
@@ -349,13 +464,34 @@ void mouseClicked()
 
 void draw()
 {
-    recalculateParameters();
     background(255, 255, 255);
     for (Tube tube : tubes)
     {
         tube.draw();
     }
     t += dt;
+
+    if (leftOpen == rightOpen)
+    {
+        // Open-open or closed-closed; all modes okay
+        sld_m.step = 1.0;
+    }
+    else
+    {
+        // Half-open; odd only
+        sld_m.step = 2.0;
+    }
+
+    for (Slider slider : sliders)
+    {
+        slider.interact();
+        slider.drawSelf();
+    }
+    m = sld_m.value;
+    recalculateParameters();
+    String mString = "m = " + m;
+    fill(0, 0, 0);
+    text(mString, lerp(sld_m.xmin, sld_m.xmax, 0.5) - textWidth(mString) / 2, sld_m.y + sld_m.height);
 }
 
 // vim: syn=java ft=java
