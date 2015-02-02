@@ -22,5 +22,6 @@ Controls and interactivity:
     If you mouse over the bottom tube, you can additionally see the nodes (blue) and antinodes (red) created.
   * Click the buttons at the bottom to change the wave parameters.
     Note that the standing wave mode takes on only odd values when the tube is half-open.
+  * Observe how the displacement graphs at right relate to the particle motion at left.
 
 {% include pjs_canvas.html %}

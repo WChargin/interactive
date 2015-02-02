@@ -1,7 +1,7 @@
-int m = 2;
+int m = 3;
 int particleCount = 500;
-float k = 2 * PI * m;
-float omega = PI * m;
+float k = PI * m;
+float omega = 0.5 * PI * m;
 float A = 0.1 / omega * PI;
 
 float t = 0;
@@ -86,12 +86,41 @@ class Tube
     {
         if (this.direction == Direction.STANDING)
         {
-            return 2 * A * Math.sin(k * x0) * Math.cos(omega * t);
+            if (leftOpen && rightOpen)
+            {
+                return 2 * A * Math.sin(k * x0 + PI / 2) * Math.cos(omega * t);
+            }
+            else if (!leftOpen && !rightOpen)
+            {
+                return 2 * A * Math.sin(k * x0) * Math.cos(omega * t);
+            }
+            else
+            {
+                // Half-open
+                if (rightOpen)
+                {
+                    return 2 * A * Math.sin(k * x0 / 2) * Math.cos(omega * t);
+                }
+                else
+                {
+                    return 2 * A * Math.sin(k * x0 / 2 + PI / 2) * Math.cos(omega * t);
+                }
+            }
         }
         else
         {
             float multiplier = this.direction == Direction.RIGHT ? 1 : -1;
-            return A * Math.sin(k * x0 - multiplier * omega * t);
+            float dphi = 0;
+            if (leftOpen && rightOpen)
+            {
+                dphi = PI / 2;
+            }
+            else if (leftOpen || rightOpen)
+            {
+                // Half-open
+
+            }
+            return A * Math.sin(k * x0 - multiplier * omega * t + dphi);
         }
     }
 
@@ -188,21 +217,21 @@ class Tube
 
         float lambda = 1 / 10;
 
-        int mm = m / 2;
+        int mm = (leftOpen == rightOpen) ? m : m / 2;
 
         // Nodes
-        for (int i = 1; i <= mm; i++)
+        for (int i = 1; i < mm; i++)
         {
-            float x = this.xmin + (i / (mm + 1)) * this.width;
+            float x = this.xmin + (i / mm) * this.width;
             float strength = exp(-Math.pow((x - mouseX) * lambda, 2) * 1);
             stroke(0, 0, 255, 255 * strength);
             line(x, this.ymin + offset, x, this.ymax - offset);
         }
 
         // Antinodes
-        for (int i = 0; i <= mm; i++)
+        for (int i = 1; i <= mm; i++)
         {
-            float x = this.xmin + ((i + 0.5) / (mm + 1)) * this.width;
+            float x = this.xmin + ((i - 0.5) / mm) * this.width;
             float strength = exp(-Math.pow((x - mouseX) * lambda, 2) * 1);
             stroke(255, 0, 0, 255 * strength);
             line(x, this.ymin + offset, x, this.ymax - offset);
@@ -228,6 +257,13 @@ class Tube
         text("Position", graphXMax - textWidth("Position"), this.ymid - 4);
         noFill();
 
+        float tubeX = (mouseX - this.xmin) / this.width;
+        if (0 <= tubeX && tubeX <= 1 && this.ymin <= mouseY && mouseY <= this.ymax)
+        {
+            float graphX = graphXMin + tubeX * graphWidth;
+            line(graphX, this.ymin, graphX, this.ymax);
+        }
+
         stroke(0, 0, 0);
         strokeWeight(1.5);
         noFill();
@@ -238,7 +274,7 @@ class Tube
             float x = i / samples;
             float y = this.calculateDisplacement(x);
             float xpos = graphXMin + graphWidth * x;
-            float ypos = this.ymid + y / A * this.height / 4;
+            float ypos = this.ymid - y / A * this.height / 4;
 
             if (i == 0)
             {
@@ -311,10 +347,6 @@ void draw()
 {
     recalculateParameters();
     background(255, 255, 255);
-    stroke(0, 0, 0, 255 / 4);
-    strokeWeight(1);
-    noFill();
-    rect(0, 0, width - 1, height - 1);
     for (Tube tube : tubes)
     {
         tube.draw();
