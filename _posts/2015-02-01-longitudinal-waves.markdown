@@ -18,6 +18,7 @@ These two waves are superimposed to create the standing wave in the bottom tube.
 Controls and interactivity:
 
   * Click the ends of the tube to change them from open to closed or vice versa.
+    (A vertical bar represents a fixed boundary, and an arc represents an open boundary, so the tube starts out in an closed&ndash;open configuration.)
   * Move your mouse into a tube to see how much each particle is displaced from its equilibrium point.
     If you mouse over the bottom tube, you can additionally see the nodes (blue) and antinodes (red) created.
   * Click the buttons at the bottom to change the wave parameters.

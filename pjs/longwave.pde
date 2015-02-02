@@ -118,7 +118,11 @@ class Tube
             else if (leftOpen || rightOpen)
             {
                 // Half-open
-
+                if (leftOpen)
+                {
+                    dphi = PI / 2;
+                }
+                return A * Math.sin(k * x0 / 2 - multiplier * omega * t + dphi);
             }
             return A * Math.sin(k * x0 - multiplier * omega * t + dphi);
         }
