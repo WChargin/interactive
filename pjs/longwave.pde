@@ -1,14 +1,19 @@
-int m = 6;
+int m = 2;
 int particleCount = 500;
-float k = PI * m;
+float k = 2 * PI * m;
 float omega = PI * m;
-float A = 0.10 / m;
+float A = 0.1 / omega * PI;
 
 float t = 0;
 float dt = 1 / 30;
 
 boolean leftOpen = false;
 boolean rightOpen = true;
+
+void recalculateParameters()
+{
+    A = 0.1 / omega * PI;
+}
 
 // Pseudo-enum
 final class Direction
@@ -87,9 +92,9 @@ class Tube
 
     public void draw()
     {
+        drawNodes();
         drawParticles();
         drawBody();
-        drawNodes();
     }
 
     public void drawBody()
@@ -103,7 +108,7 @@ class Tube
         line(this.xmin, this.ymin, this.xmax, this.ymin);
         line(this.xmin, this.ymax, this.xmax, this.ymax);
 
-        stroke(0, 0, 255);
+        stroke(0, 0, 0);
         float boundaryWidth = 4;
         float halfWidth = boundaryWidth / 2;
 
@@ -133,13 +138,37 @@ class Tube
         {
             return;
         }
-        stroke(0, 0, 0);
-        strokeWeight(1);
-        noFill();
-        for (var i = 1; i <= m; i++)
+
+        if (this.ymin > mouseY || mouseY > this.ymax)
         {
-            float x = this.xmin + (i / (m + 1)) * this.width;
-            line(x, this.ymin, x, this.ymax);
+            return;
+        }
+
+        float weight = 4;
+        float offset = weight / 2 + 1;
+        strokeWeight(weight);
+        noFill();
+
+        float lambda = 1 / 10;
+
+        int mm = m / 2;
+
+        // Nodes
+        for (int i = 1; i <= mm; i++)
+        {
+            float x = this.xmin + (i / (mm + 1)) * this.width;
+            float strength = exp(-Math.pow((x - mouseX) * lambda, 2) * 1);
+            stroke(0, 0, 255, 255 * strength);
+            line(x, this.ymin + offset, x, this.ymax - offset);
+        }
+
+        // Antinodes
+        for (int i = 0; i <= mm; i++)
+        {
+            float x = this.xmin + ((i + 0.5) / (mm + 1)) * this.width;
+            float strength = exp(-Math.pow((x - mouseX) * lambda, 2) * 1);
+            stroke(255, 0, 0, 255 * strength);
+            line(x, this.ymin + offset, x, this.ymax - offset);
         }
     }
 
@@ -223,6 +252,7 @@ void mouseClicked()
 
 void draw()
 {
+    recalculateParameters();
     background(255, 255, 255);
     stroke(0, 0, 0, 255 / 4);
     strokeWeight(1);
