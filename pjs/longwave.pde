@@ -193,7 +193,7 @@ class Tube
                 {
                     stroke(255, 0, 0);
                     noFill();
-                    line(x0, y, x, y);
+                    line(max(this.xmin + 3, min(this.xmax - 3, x0)), y, x, y);
                     fill(0, 0, 0, 255 * 0.5);
                     noStroke();
                 }
@@ -228,7 +228,7 @@ class Tube
         {
             float x = this.xmin + (i / mm) * this.width;
             float strength = exp(-Math.pow((x - mouseX) * lambda, 2) * 1);
-            stroke(0, 0, 255, 255 * strength);
+            stroke(leftOpen ? 255 : 0, 0, leftOpen ? 0 : 255, 255 * strength);
             line(x, this.ymin + offset, x, this.ymax - offset);
         }
 
@@ -237,7 +237,7 @@ class Tube
         {
             float x = this.xmin + ((i - 0.5) / mm) * this.width;
             float strength = exp(-Math.pow((x - mouseX) * lambda, 2) * 1);
-            stroke(255, 0, 0, 255 * strength);
+            stroke(leftOpen ? 0 : 255, 0, leftOpen ? 255 : 0, 255 * strength);
             line(x, this.ymin + offset, x, this.ymax - offset);
         }
     }
