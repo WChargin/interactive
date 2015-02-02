@@ -4,6 +4,9 @@ float k = PI * m;
 float omega = 0.5 * PI * m;
 float A = 0.1 / omega * PI;
 
+float factor_A = 0.1;
+float factor_omega = 0.5;
+
 float t = 0;
 float dt = 1 / 30;
 
@@ -12,9 +15,9 @@ boolean rightOpen = true;
 
 void recalculateParameters()
 {
-    A = 0.1 / omega * PI;
+    A = factor_A / omega * PI;
     k = PI * m;
-    omega = 0.5 * PI * m;
+    omega = factor_omega * PI * m;
 }
 
 float graphXMin;
@@ -334,7 +337,10 @@ class Slider
     private float positionToValue(float x)
     {
         float z = map(x, this.xmin, this.xmax, 0, this.max - this.min);
-        z = round(z / this.step) * this.step;
+        if (this.step != 0)
+        {
+            z = round(z / this.step) * this.step;
+        }
         z += this.min;
         z = Math.min(this.max, Math.max(this.min, z));
         return z;
@@ -346,14 +352,9 @@ class Slider
         this.value = this.positionToValue(this.valueToPosition(this.value));
 
         // Consider the mouse event
-        if (!this.pressed && mousePressed)
-        {
-            float dy = abs(mouseY - this.y);
-            if (this.xmin <= mouseX && mouseX <= this.xmax && dy <= this.height)
-            {
-                this.pressed = true;
-            }
-        }
+        boolean okY = abs(mouseY - this.y);
+        boolean okX = this.xmin - 5 <= mouseX && mouseX <= this.xmax + 5;
+        this.pressed = mousePressed && okX && okY;
         if (this.pressed)
         {
             float xnew = mouseX;
@@ -372,10 +373,13 @@ class Slider
         strokeWeight(1);
         noFill();
         line(this.xmin, this.y, this.xmax, this.y);
-        for (float z = this.min; z <= this.max; z += this.step)
+        if (this.step > 0)
         {
-            float x = this.valueToPosition(z);
-            line(x, this.y - 2, x, this.y + 2);
+            for (float z = this.min; z <= this.max; z += this.step)
+            {
+                float x = this.valueToPosition(z);
+                line(x, this.y - 2, x, this.y + 2);
+            }
         }
 
         // Draw the thumb
@@ -406,7 +410,7 @@ class Slider
 Tube first, second, standing;
 Tube tubes[];
 
-Slider sld_m;
+Slider sld_m, sld_dt;
 Slider sliders[];
 
 void setup()
@@ -426,9 +430,10 @@ void setup()
     graphXMid = (graphXMin + graphXMax) / 2;
     graphWidth = graphXMax - graphXMin;
 
-    sld_m = new Slider(1, 3, 7, 1, width * 0.05, width * 0.45, height * 0.9);
+    sld_m = new Slider(1, 3, 7, 1, width * 0.05, width * 0.30, height * 0.9);
+    sld_dt = new Slider(0, 1/30, 1/10, 0, width * 0.375, width * 0.625, height * 0.9);
 
-    sliders = { sld_m };
+    sliders = { sld_m, sld_dt };
 
     frameRate(1 / dt);
 }
@@ -491,7 +496,11 @@ void draw()
     recalculateParameters();
     String mString = "m = " + m;
     fill(0, 0, 0);
-    text(mString, lerp(sld_m.xmin, sld_m.xmax, 0.5) - textWidth(mString) / 2, sld_m.y + sld_m.height);
+    text(mString, lerp(sld_m.xmin, sld_m.xmax, 0.5) - textWidth(mString) / 2, sld_m.y + sld_m.height + textAscent() / 2);
+
+    dt = sld_dt.value;
+    String dtString = "time factor = " + Math.round(dt * 100) / 100;
+    text(dtString, lerp(sld_dt.xmin, sld_dt.xmax, 0.5) - textWidth(dtString) / 2, sld_dt.y + sld_dt.height + textAscent() / 2);
 }
 
 // vim: syn=java ft=java
