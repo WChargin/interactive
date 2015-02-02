@@ -4,8 +4,8 @@ float k = PI * m;
 float omega = 0.5 * PI * m;
 float A = 0.1 / omega * PI;
 
-float factor_A = 0.1;
-float factor_omega = 0.5;
+float AFactor = 0.1;
+float omegaFactor = 0.5;
 
 float t = 0;
 float dt = 1 / 30;
@@ -15,9 +15,9 @@ boolean rightOpen = true;
 
 void recalculateParameters()
 {
-    A = factor_A / omega * PI;
+    A = AFactor / omega * PI;
     k = PI * m;
-    omega = factor_omega * PI * m;
+    omega = omegaFactor * PI * m;
 }
 
 float graphXMin;
@@ -256,12 +256,19 @@ class Tube
         line(graphXMin, this.ymin, graphXMin, this.ymax);
         line(graphXMin, this.ymid, graphXMax, this.ymid);
         line(graphXMin, this.ymin, graphXMin - 2, this.ymin);
-        text("2A", graphXMin - textWidth("2A") - 4, this.ymin + textAscent("2A") / 2);
 
-        float ay = this.ymin + this.height / 4;
-        line(graphXMin, ay, graphXMin - 2, ay);
-        text("A", graphXMin - textWidth("A") - 4, ay + textAscent("A") / 2);
+        if (A != 0)
+        {
+            text("2A", graphXMin - textWidth("2A") - 4, this.ymin + textAscent("2A") / 2);
 
+            float ay = this.ymin + this.height / 4;
+            line(graphXMin, ay, graphXMin - 2, ay);
+            text("A", graphXMin - textWidth("A") - 4, ay + textAscent("A") / 2);
+        }
+        else
+        {
+            text("A = 0", graphXMin - textWidth("A = 0") - 4, this.ymid + textAscent() / 2);
+        }
         text("Displacement", graphXMin + 4, this.ymin);
         text("Position", graphXMax - textWidth("Position"), this.ymid - 4);
         noFill();
@@ -283,7 +290,7 @@ class Tube
             float x = i / samples;
             float y = this.calculateDisplacement(x);
             float xpos = graphXMin + graphWidth * x;
-            float ypos = this.ymid - y / A * this.height / 4;
+            float ypos = this.ymid - (A == 0 ? 0 : y / A) * this.height / 4;
 
             if (i == 0)
             {
@@ -352,7 +359,7 @@ class Slider
         this.value = this.positionToValue(this.valueToPosition(this.value));
 
         // Consider the mouse event
-        boolean okY = abs(mouseY - this.y);
+        boolean okY = abs(mouseY - this.y) <= this.height * 2;
         boolean okX = this.xmin - 5 <= mouseX && mouseX <= this.xmax + 5;
         this.pressed = mousePressed && okX && okY;
         if (this.pressed)
@@ -410,7 +417,7 @@ class Slider
 Tube first, second, standing;
 Tube tubes[];
 
-Slider sld_m, sld_dt;
+Slider mSlider, dtSlider, ASlider;
 Slider sliders[];
 
 void setup()
@@ -430,10 +437,11 @@ void setup()
     graphXMid = (graphXMin + graphXMax) / 2;
     graphWidth = graphXMax - graphXMin;
 
-    sld_m = new Slider(1, 3, 7, 1, width * 0.05, width * 0.30, height * 0.9);
-    sld_dt = new Slider(0, 1/30, 1/10, 0, width * 0.375, width * 0.625, height * 0.9);
+    mSlider = new Slider(1, 3, 7, 1, width * 0.05, width * 0.30, height * 0.9);
+    dtSlider = new Slider(0, 1/30, 1/10, 0, width * 0.375, width * 0.625, height * 0.9);
+    ASlider = new Slider(0, 0.1, 0.2, 0, width * 0.7, width * 0.95, height * 0.9);
 
-    sliders = { sld_m, sld_dt };
+    sliders = { mSlider, dtSlider, ASlider };
 
     frameRate(1 / dt);
 }
@@ -479,12 +487,12 @@ void draw()
     if (leftOpen == rightOpen)
     {
         // Open-open or closed-closed; all modes okay
-        sld_m.step = 1.0;
+        mSlider.step = 1.0;
     }
     else
     {
         // Half-open; odd only
-        sld_m.step = 2.0;
+        mSlider.step = 2.0;
     }
 
     for (Slider slider : sliders)
@@ -492,15 +500,19 @@ void draw()
         slider.interact();
         slider.drawSelf();
     }
-    m = sld_m.value;
+    m = mSlider.value;
     recalculateParameters();
     String mString = "m = " + m;
     fill(0, 0, 0);
-    text(mString, lerp(sld_m.xmin, sld_m.xmax, 0.5) - textWidth(mString) / 2, sld_m.y + sld_m.height + textAscent() / 2);
+    text(mString, lerp(mSlider.xmin, mSlider.xmax, 0.5) - textWidth(mString) / 2, mSlider.y + mSlider.height + textAscent() / 2);
 
-    dt = sld_dt.value;
-    String dtString = "time factor = " + Math.round(dt * 100) / 100;
-    text(dtString, lerp(sld_dt.xmin, sld_dt.xmax, 0.5) - textWidth(dtString) / 2, sld_dt.y + sld_dt.height + textAscent() / 2);
+    dt = dtSlider.value;
+    String dtString = "simulation speed = " + Math.round(dt * 100) / 100;
+    text(dtString, lerp(dtSlider.xmin, dtSlider.xmax, 0.5) - textWidth(dtString) / 2, dtSlider.y + dtSlider.height + textAscent() / 2);
+
+    AFactor = ASlider.value;
+    String AString = "amplitude = " + Math.round(A * 100) / 100;
+    text(AString, lerp(ASlider.xmin, ASlider.xmax, 0.5) - textWidth(AString) / 2, ASlider.y + ASlider.height + textAscent() / 2);
 }
 
 // vim: syn=java ft=java
