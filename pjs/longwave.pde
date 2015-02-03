@@ -507,11 +507,11 @@ void draw()
     text(mString, lerp(mSlider.xmin, mSlider.xmax, 0.5) - textWidth(mString) / 2, mSlider.y + mSlider.height + textAscent() / 2);
 
     dt = dtSlider.value;
-    String dtString = "simulation speed = " + Math.round(dt * 100) / 100;
+    String dtString = "simulation speed = " + Math.ceil(dt * 1000) / 1000;
     text(dtString, lerp(dtSlider.xmin, dtSlider.xmax, 0.5) - textWidth(dtString) / 2, dtSlider.y + dtSlider.height + textAscent() / 2);
 
     AFactor = ASlider.value;
-    String AString = "amplitude = " + Math.round(A * 100) / 100;
+    String AString = "amplitude = " + Math.ceil(A * 1000) / 1000;
     text(AString, lerp(ASlider.xmin, ASlider.xmax, 0.5) - textWidth(AString) / 2, ASlider.y + ASlider.height + textAscent() / 2);
 }
 
