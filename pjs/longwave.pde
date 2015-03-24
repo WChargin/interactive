@@ -48,6 +48,144 @@ class Particle
     {
         this(Math.random(), Math.random());
     }
+    public static Particle[] uniformDistribution(int count, float w, float h)
+    {
+        Particle[] particles = new Particle[count];
+        for (int i = 0; i < particles.length; i++)
+        {
+            particles[i] = new Particle();
+        }
+        return particles;
+    }
+    public static Particle[] poissonDiskDistribution(int count, float w, float h)
+    {
+
+        /*
+         * This is Bridson's algorithm; c.f.
+         * https://www.cs.ubc.ca/~rbridson/docs/bridson-siggraph07-poissondisk.pdf.
+         */
+        final int k = 30;
+
+        // Calculate the separation radius.
+        // Do this by partitioning the total area into disks for each ideal sample.
+        final float totalArea = w * h;
+        final float individualArea = totalArea / count;
+        final float radius = Math.sqrt(2 * individualArea / Math.PI);
+        final float radiusSq = radius * radius;
+
+        final float cellSize = radius / Math.sqrt(2);
+        final int cellsX = Math.ceil(w / cellSize);
+        final int cellsY = Math.ceil(h / cellSize);
+
+        // Create the index map and initialize all to "empty" (-1).
+        final int[][] indices = new int[cellsX][cellsY];
+        for (int[] col : indices)
+        {
+            for (int i = 0; i < col.length; i++)
+            {
+                col[i] = -1;
+            }
+        }
+
+        // Create the active list, and choose a first sample.
+        final ArrayList active = new ArrayList();
+        final ArrayList particles = new ArrayList();
+
+        // The first sample is chosen uniformly.
+        Particle first = new Particle(Math.random() * w, Math.random() * h);
+        particles.add(first);
+        active.add(0);
+        indices[(int) (first.x / cellSize)][(int) (first.y / cellSize)] = 0;
+
+        while (active.size() > 0)
+        {
+            // Pick a random point.
+            int index = (int) (Math.random() * active.size());
+            Particle base = particles.get(active.get(index));
+            boolean foundOne = false;
+
+            // Sample k points uniformly in the spherical annulus
+            // centered about active[i] and with radii r and 2r.
+            for (int i = 0; i < k; i++)
+            {
+                // Generate a point.
+                float x = -1;
+                float y = -1;
+                while (x < 0 || x >= w || y < 0 || y >= h)
+                {
+                    float dr = radius * (Math.random() + 1);
+                    float dtheta = Math.random() * 2 * Math.PI;
+                    x = base.x + dr * Math.cos(dtheta);
+                    y = base.y + dr * Math.sin(dtheta);
+                }
+
+                // Check distance to nearby points.
+                // We only have to check the neighboring cells.
+                int cellX = (int) (x / cellSize);
+                int cellY = (int) (y / cellSize);
+                boolean tooClose = false;
+                for (int ix = cellX - 1; !tooClose && ix <= cellX + 1; ix++)
+                {
+                    if (ix < 0 || ix >= indices.length)
+                    {
+                        continue;
+                    }
+                    Particle[] col = indices[ix];
+                    for (int iy = cellY - 1; iy <= cellY + 1; iy++)
+                    {
+                        if (iy < 0 || iy >= col.length)
+                        {
+                            continue;
+                        }
+                        int indexHere = col[iy];
+                        if (indexHere == -1)
+                        {
+                            // No particle here. No problem.
+                            continue;
+                        }
+                        Particle particle = particles.get(indexHere);
+                        // There's a particle; check the distance to the candidate.
+                        float distanceSq = Math.pow(x - particle.x, 2) +
+                            Math.pow(y - particle.y, 2);
+                        if (distanceSq < radiusSq)
+                        {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+                }
+                if (!tooClose)
+                {
+                    // Cool! Got it.
+                    Particle newParticle = new Particle(x, y);
+                    int newIndex = particles.size();
+                    particles.add(newParticle);
+                    indices[cellX][cellY] = newIndex;
+                    active.add(newIndex);
+                    foundOne = true;
+                    break;
+                }
+            }
+            if (!foundOne)
+            {
+                // Nothing in the area. Remove this point from the active list.
+                active.remove(index);
+            }
+        }
+
+        Particle[] result = new Particle[particles.size()];
+        for (int i = 0; i < particles.size(); i++)
+        {
+            Particle particle = particles.get(i);
+            result[i] = new Particle(particle.x / w, particle.y / h);
+        }
+
+        return result;
+    }
+    public static Particle[] random(int count, float w, float h)
+    {
+        return poissonDiskDistribution(count, w, h);
+    }
 }
 
 class Tube
@@ -80,11 +218,7 @@ class Tube
 
         this.direction = dir;
 
-        this.particles = new Particle[particleCount];
-        for (int i = 0; i < particles.length; i++)
-        {
-            particles[i] = new Particle();
-        }
+        this.particles = Particle.random(particleCount, width, height);
     }
 
     public float calculateDisplacement(float x0)
